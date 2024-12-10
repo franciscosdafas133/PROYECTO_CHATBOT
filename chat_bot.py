@@ -1,1 +1,2 @@
-print("hola botame tu gaaa")
+print("hola botame tu gaaa  ")
+var = 23
