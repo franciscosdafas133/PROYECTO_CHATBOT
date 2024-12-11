@@ -46,4 +46,4 @@ if __name__ == "__main__":
     df_pdfs.to_csv("base_datos_texto.csv", index=False)
     print("Texto extraído y guardado en base_datos_texto.csv")
 "hplita
-"
+"wee
