@@ -1,49 +1,42 @@
 import os
-from PyPDF2 import PdfReader
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
 import pandas as pd
 
-# Configurar la ruta de Tesseract
+# Configuración para Tesseract OCR
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 def extraer_texto_pdfs(carpeta_pdfs):
-    datos = []  # Aquí almacenaremos texto extraído de cada PDF
+    datos = []
 
-    # Iterar sobre cada archivo en la carpeta
     for archivo in os.listdir(carpeta_pdfs):
-        if archivo.endswith(".pdf"):  # Procesar solo archivos PDF
+        if archivo.endswith(".pdf"):
             ruta_pdf = os.path.join(carpeta_pdfs, archivo)
             print(f"Procesando: {archivo}")
             texto_completo = ""
 
-            # Intentar leer texto directamente con PyPDF2
             try:
-                lector = PdfReader(ruta_pdf)
-                for pagina in lector.pages:
-                    texto_completo += pagina.extract_text()
+                # Intentar extraer texto directamente con PyMuPDF
+                with fitz.open(ruta_pdf) as documento:
+                    for pagina in documento:
+                        texto_pagina = pagina.get_text()
+                        if texto_pagina.strip():  # Verificar si hay texto
+                            texto_completo += texto_pagina
+                        else:
+                            # Si no hay texto, usar OCR
+                            pixmap = pagina.get_pixmap()
+                            imagen = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
+                            texto_completo += pytesseract.image_to_string(imagen)
             except Exception as e:
-                print(f"Error al leer {archivo} con PyPDF2, intentando OCR...")
+                print(f"Error al procesar {archivo}: {e}")
 
-            # Si no se extrajo texto, usar OCR
-            if not texto_completo.strip():
-                imagenes = convert_from_path(ruta_pdf)  # Convertir cada página a imagen
-                for img in imagenes:
-                    texto_completo += pytesseract.image_to_string(img)  # Usar OCR
-
-            # Guardar el texto y el nombre del archivo
             datos.append({"archivo": archivo, "texto": texto_completo})
 
-    # Convertir los datos a un DataFrame de pandas
     return pd.DataFrame(datos)
 
 if __name__ == "__main__":
-    carpeta_pdfs = r"C:\Users\Kenneth Garcia\Desktop\env\DATOS\PDFS"  # Ruta a la carpeta con los PDFs
+    carpeta_pdfs = r"C:\Users\Kenneth Garcia\Desktop\env\DATOS\PDFS"
     df_pdfs = extraer_texto_pdfs(carpeta_pdfs)
-
-    # Guardar los datos en un archivo CSV
     df_pdfs.to_csv("base_datos_texto.csv", index=False)
     print("Texto extraído y guardado en base_datos_texto.csv")
-"hplita
-"wee
